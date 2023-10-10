@@ -354,10 +354,5 @@ namespace UnitTestingA1Base.Data
 
         #endregion
 
-
-
     }
-
-
-
 }
