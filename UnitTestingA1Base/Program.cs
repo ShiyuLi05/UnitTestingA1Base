@@ -1,6 +1,7 @@
 #region Setup
 using UnitTestingA1Base.Data;
 using UnitTestingA1Base.Models;
+using static UnitTestingA1Base.Data.BusinessLogicLayer;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,7 +40,7 @@ app.MapGet("/recipes/byIngredient", (string? name, int? id) =>
         return Results.Ok(recipes);
     } catch(Exception ex)
     {
-        return Results.NotFound();
+        return Results.NotFound(ex.Message);
     }
 });
 
@@ -61,9 +62,16 @@ app.MapGet("/recipes/byDiet", (string? name, int? id) =>
 ///<summary>
 ///Returns a HashSet of all recipes by either Name or Primary Key. 
 /// </summary>
-app.MapGet("/recipes", (string name, int id) =>
+app.MapGet("/recipes", (string? name, int? id) =>
 {
-
+    try
+    {
+        HashSet<Recipe> recipes = bll.GetRecipesByNameOrId(id, name);
+        return Results.Ok(recipes);
+    } catch (Exception ex)
+    {
+        return Results.NotFound();
+    }
 });
 
 ///<summary>
@@ -79,27 +87,54 @@ app.MapGet("/recipes", (string name, int id) =>
 /// 
 /// All IDs should be created for these objects using the returned value of the AppStorage.GeneratePrimaryKey() method
 /// </summary>
-app.MapPost("/recipes", () => {
-
+app.MapPost("/recipes", (RecipeIngredientRequest request) =>
+{
+    try
+    {
+        bll.AddRecipeWithIngredients(request);
+        return Results.Created("/recipes", "Recipe and ingredients added successfully.");
+    } catch (Exception ex)
+    {
+        return Results.BadRequest(ex.Message);
+    }
 });
+
+
 
 ///<summary>
 /// Deletes an ingredient from the database. 
 /// If there is only one Recipe using that Ingredient, then the Recipe is also deleted, as well as all associated RecipeIngredients
 /// If there are multiple Recipes using that ingredient, a Forbidden response code should be provided with an appropriate message
 ///</summary>
-app.MapDelete("/ingredients", (int id, string name) =>
+app.MapDelete("/ingredients", (int? id, string? name) =>
 {
-
+    try
+    {
+        bll.DeleteIngredient(id, name);
+        return Results.Ok("Ingredient deleted successfully.");
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.BadRequest(ex.Message);
+    }
 });
+
 
 /// <summary>
 /// Deletes the requested recipe from the database
 /// This should also delete the associated IngredientRecipe objects from the database
 /// </summary>
-app.MapDelete("/recipes", (int id, string name) =>
+app.MapDelete("/recipes", (int? id, string? name) =>
 {
-
+    try
+    {
+        bll.DeleteRecipe(id, name);
+        return Results.Ok("Recipe deleted successfully.");
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.BadRequest(ex.Message);
+    }
 });
 
 #endregion
